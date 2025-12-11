@@ -2,7 +2,7 @@ import tkinter as tk
 import UserDatabase
 from tkinter import messagebox
 
-
+ 
 class GUI:
     def __init__(self):
         self.db = UserDatabase.UserDatabase()
