@@ -29,29 +29,38 @@ class GUI:
         self.signup_username = None
         self.signup_password = None
         self.signup_confirm = None
-
+        self.signup_window = None
 
     def open_signup_window(self):
-        signup_window = tk.Toplevel(self.root)
-        signup_window.title("Create Account")
-        signup_window.geometry("300x250")
-        signup_window.grab_set()  # make modal (block main window)
-        signup_window.configure(bg="lightblue")
+        self.signup_window = tk.Toplevel(self.root)
+        self.signup_window.title("Create Account")
+        self.signup_window.geometry("300x250")
+        self.signup_window.grab_set()  # make modal (block main window)
+        self.signup_window.configure(bg="lightblue")
 
         # Entries
-        tk.Label(signup_window, text="Username:",bg="lightblue").pack(pady=5)
-        self.signup_username = tk.Entry(signup_window, width=25)
+        tk.Label(self.signup_window, text="Username:",bg="lightblue").pack(pady=5)
+        self.signup_username = tk.Entry(self.signup_window, width=25)
         self.signup_username.pack()
 
-        tk.Label(signup_window, text="Password:",bg="lightblue").pack(pady=5)
-        self.signup_password = tk.Entry(signup_window, width=25, show="*")
+        tk.Label(self.signup_window, text="Password:",bg="lightblue").pack(pady=5)
+        self.signup_password = tk.Entry(self.signup_window, width=25, show="*")
         self.signup_password.pack()
 
-        tk.Label(signup_window, text="Confirm Password:",bg="lightblue").pack(pady=5)
-        self.signup_confirm = tk.Entry(signup_window, width=25, show="*")
+        tk.Label(self.signup_window, text="Confirm Password:",bg="lightblue").pack(pady=5)
+        self.signup_confirm = tk.Entry(self.signup_window, width=25, show="*")
         self.signup_confirm.pack()
 
-        tk.Button(signup_window, text="Sign Up", command=self.create_user).pack(pady=10)
+        tk.Button(self.signup_window, text="Sign Up", command=self.create_user).pack(pady=10)
+
+
+        def on_closing():
+            if messagebox.askyesno("Exit", "Are you sure you want to close this window?"):
+                self.signup_window.destroy() # Destroy the window if user confirms
+        
+        self.signup_window.protocol("WM_DELETE_WINDOW", on_closing)
+
+        
 
     def create_user(self):
         username = self.signup_username.get()
@@ -60,7 +69,11 @@ class GUI:
         if password != confirm:
             messagebox.showerror("Confirmation Error", "Password do not match!")
         else:
-            self.db.add_user(username,password)
+            if self.db.add_user(username,password):
+                messagebox.showinfo("Account Created", "Account successfully created!")
+                self.signup_window.destroy()
+            else:
+                messagebox.showerror("Signup Error", "Username already exists!")
 
 
     def login(self):

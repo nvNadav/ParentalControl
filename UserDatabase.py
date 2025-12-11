@@ -25,7 +25,6 @@ class UserDatabase:
 
     def add_user(self, username, password):
         hash_password = hashlib.sha256(password.encode()).hexdigest()
-        print (hash_password)
         try:
             self.cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)",
                                 (username, hash_password))
