@@ -4,6 +4,7 @@ import keyboard
 import threading
 import pyautogui
 import io
+import struct
 
 from pynput.mouse import Controller, Button
 
@@ -93,7 +94,16 @@ def take_screenshot():
 
 def send_image(img_bytes,sock):
     #try:
-        sock.send(prot.create_msg_with_header(str(img_bytes)).encode())
+        CHUNK_SIZE = 1024
+        total_chunks = (len(img_bytes) + CHUNK_SIZE - 1) // CHUNK_SIZE
+        for i in range(total_chunks):
+            start = i * CHUNK_SIZE
+            end = start + CHUNK_SIZE
+            chunk = img_bytes[start:end]
+
+            # Header: chunk_index (2 bytes), total_chunks (2 bytes)
+            header = struct.pack("!HH", i, total_chunks)
+            sock.send(header + chunk)
     #xcept Exception as error:
         #print(str(error))
 

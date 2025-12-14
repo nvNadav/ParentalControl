@@ -1,6 +1,7 @@
 import tkinter as tk
 import UserDatabase
 from tkinter import messagebox
+import mainWindow
 
  
 class GUI:
@@ -83,7 +84,8 @@ class GUI:
         if not self.db.check_user(username,password):
             messagebox.showerror("Login Error", "Incorrect username or password!")
         else:
-            messagebox.showinfo("Login Success", "Successfully logged in")
+            self.root.destroy()
+            mainWindow.mainWindow()
 
 if __name__=="__main__":
     gui=GUI()

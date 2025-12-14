@@ -6,6 +6,7 @@ import numpy as np
 import keyboard
 import numpy as np
 import cv2
+import struct
 
 from pynput import mouse
 
@@ -120,9 +121,21 @@ def mouse_actions():
 def recieve_screenshot():
     try:
         screen_socket=create_socket(screen_port,sock_type=socket.SOCK_DGRAM)
+        chunks = {}
+        total_chunks = None
         while True:
-            img_bytes=prot.receive_msg(screen_socket)
-            display_image(img_bytes)
+            data, addr = screen_socket.recv(2048)
+            index, total = struct.unpack("!HH", data[:4])
+            chunk_data = data[4:]
+
+            chunks[index] = chunk_data
+            total_chunks = total
+
+            if len(chunks) == total_chunks:
+                break
+
+        img_bytes = b''.join(chunks[i] for i in range(total_chunks))
+        display_image(img_bytes)
     except Exception as error:
         print (str(error))
 
