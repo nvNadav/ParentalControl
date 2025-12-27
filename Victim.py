@@ -46,6 +46,7 @@ def recieve_mouse(end_connection):
         print("Mouse is connected...")
         mouse = Controller()
         functions ={"MOVE":move,"PRESS":press,"RELEASE":release,"SCROLL":scroll}
+        
         while not end_connection.is_set():
             list=prot.receive_msg(mouse_socket).split()
             if list[0]=="EXIT":
