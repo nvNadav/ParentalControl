@@ -47,6 +47,7 @@ def keyboard_actions():
 
         keyboard.hook(lambda e: new_key(e, keyboard_socket))
         keyboard.wait('shift+esc')
+        stop_all.set()
         keyboard_socket.send(prot.create_msg_with_header("EXIT").encode())
     except Exception as error:
         print (str(error))
@@ -66,6 +67,8 @@ move_interval = 0.05
 position_threshold = 3  # Only send if moved at least 3 pixels
 
 def on_move(x, y,sock):
+    if stop_all.is_set():
+        return False
     global last_move_time, last_position
     
     current_time = time.time()
@@ -90,6 +93,8 @@ def on_move(x, y,sock):
     sock.send(prot.create_msg_with_header(f"MOVE {x} {y}").encode())
 
 def on_click(x, y, button, pressed,sock):
+    if stop_all.is_set():
+        return False
     if pressed:
         if button == mouse.Button.middle and x <= 2 and y <= 2:
             return False 
@@ -98,6 +103,8 @@ def on_click(x, y, button, pressed,sock):
         sock.send(prot.create_msg_with_header(f"RELEASE {button.name}").encode())
 
 def on_scroll(x, y, dx, dy,sock):
+    if stop_all.is_set():
+        return False
     sock.send(prot.create_msg_with_header(f"SCROLL {dx} {dy}").encode())
 
 
@@ -125,6 +132,8 @@ def receive_screenshot():
         screen_socket=create_socket(screen_port,sock_type=socket.SOCK_DGRAM)
         
         while True:
+            if stop_all.is_set():
+                return
             chunks = {}
             total_chunks = None
             while True:
@@ -139,7 +148,6 @@ def receive_screenshot():
                     break
 
             img_bytes = b''.join(chunks[i] for i in range(total_chunks))
-            print ("received..")
             display_image(img_bytes)
     except Exception as error:
         print (str(error))
@@ -153,15 +161,13 @@ def display_image(img_bytes):
         
         # Display
         cv2.imshow('Screenshot Stream', img)
-        cv2.waitKey(1)  # 1ms delay, allows window to update
+        cv2.waitKey(1)  # 1ms delay
 
-        # nparr = np.frombuffer(img_bytes, np.uint8)
-        # image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        # cv2.imshow("Received Screenshot", image)
-        # cv2.waitKey(100)
-        # cv2.destroyAllWindows()
     except Exception as error:
         print (str(error))
+
+
+stop_all = threading.Event()
 
 keyboard_thread=threading.Thread(target=keyboard_actions)
 mouse_thread=threading.Thread(target=mouse_actions)

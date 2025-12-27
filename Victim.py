@@ -83,18 +83,18 @@ def recieve_keyboard(end_connection):
 # --------------------
 
 def take_screenshot():
-    #try:
+    try:
         screenshot = pyautogui.screenshot()
 
         buffer = io.BytesIO()
         screenshot.save(buffer, format="JPEG")
         img_bytes = buffer.getvalue()
         return img_bytes
-    #except Exception as error:
-        #print(str(error))
+    except Exception as error:
+        print(str(error))
 
 def send_image(img_bytes,sock):
-    #try:
+    try:
         CHUNK_SIZE = 1024
         total_chunks = (len(img_bytes) + CHUNK_SIZE - 1) // CHUNK_SIZE
         for i in range(total_chunks):
@@ -105,20 +105,20 @@ def send_image(img_bytes,sock):
             # Header: chunk_index (2 bytes), total_chunks (2 bytes)
             header = struct.pack("!HH", i, total_chunks)
             sock.send(header + chunk)
-    #xcept Exception as error:
-        #print(str(error))
+    except Exception as error:
+        print(str(error))
 
 def image_stream(end_connection):
-    #try:
+    try:
         screen_socket = create_socket(server_ip,60125,sock_type=socket.SOCK_DGRAM)
         while not end_connection.is_set():
             sceenshot_bytes = take_screenshot()
             send_image(sceenshot_bytes,screen_socket)
-    #except Exception as error:
-        #print(str(error))
-    #finally:
-        #screen_socket.close()
-        #print("screen closed...")
+    except Exception as error:
+        print(str(error))
+    finally:
+        screen_socket.close()
+        print("screen closed...")
 
 
 end_connection = threading.Event()
