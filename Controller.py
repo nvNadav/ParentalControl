@@ -163,10 +163,10 @@ def display_image(img_bytes):
     except Exception as error:
         print (str(error))
 
-# keyboard_thread=threading.Thread(target=keyboard_actions)
-# mouse_thread=threading.Thread(target=mouse_actions)
-# mouse_thread.start()
-# keyboard_thread.start()
+keyboard_thread=threading.Thread(target=keyboard_actions)
+mouse_thread=threading.Thread(target=mouse_actions)
+mouse_thread.start()
+keyboard_thread.start()
 
 screen_thread=threading.Thread(target=receive_screenshot)
 screen_thread.start()
