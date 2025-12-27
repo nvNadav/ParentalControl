@@ -96,8 +96,6 @@ def on_click(x, y, button, pressed,sock):
     if stop_all.is_set():
         return False
     if pressed:
-        if button == mouse.Button.middle and x <= 2 and y <= 2:
-            return False 
         sock.send(prot.create_msg_with_header(f"PRESS {button.name}").encode())
     else:
         sock.send(prot.create_msg_with_header(f"RELEASE {button.name}").encode())
