@@ -10,6 +10,7 @@ from pynput.mouse import Controller, Button
 
 import prot
 
+server_ip = "192.168.1.161"
 
 def create_socket (ip,port,*,family=socket.AF_INET, sock_type=socket.SOCK_STREAM):
     cli = socket.socket(family,sock_type)
@@ -41,7 +42,7 @@ def scroll(list, mouse):
 
 def recieve_mouse(end_connection):
     try:
-        mouse_socket = create_socket("192.168.1.161",60124)
+        mouse_socket = create_socket(server_ip,60124)
         print("Mouse is connected...")
         mouse = Controller()
         functions ={"MOVE":move,"PRESS":press,"RELEASE":release,"SCROLL":scroll}
@@ -63,7 +64,7 @@ def recieve_mouse(end_connection):
 
 def recieve_keyboard(end_connection):
     try:
-        keyboard_socket = create_socket("192.168.1.161",60123)
+        keyboard_socket = create_socket(server_ip,60123)
         print("Keyboard is connected...")
         while not end_connection.is_set():
             key = prot.receive_msg(keyboard_socket)
@@ -109,7 +110,7 @@ def send_image(img_bytes,sock):
 
 def image_stream(end_connection):
     #try:
-        screen_socket = create_socket("192.168.1.161",60125,sock_type=socket.SOCK_DGRAM)
+        screen_socket = create_socket(server_ip,60125,sock_type=socket.SOCK_DGRAM)
         while not end_connection.is_set():
             sceenshot_bytes = take_screenshot()
             send_image(sceenshot_bytes,screen_socket)
@@ -122,13 +123,13 @@ def image_stream(end_connection):
 
 end_connection = threading.Event()
 
-# mouse_thread = threading.Thread(target=recieve_mouse, args=(end_connection, ))
-# keyboard_thread = threading.Thread(target=recieve_keyboard, args=(end_connection, ))
+mouse_thread = threading.Thread(target=recieve_mouse, args=(end_connection, ))
+keyboard_thread = threading.Thread(target=recieve_keyboard, args=(end_connection, ))
 screen_thread = threading.Thread(target=image_stream, args=(end_connection, ))
-# mouse_thread.start()
-# keyboard_thread.start()
+mouse_thread.start()
+keyboard_thread.start()
 screen_thread.start()
 
-# mouse_thread.join()
-# keyboard_thread.join()
+mouse_thread.join()
+keyboard_thread.join()
 screen_thread.join()
