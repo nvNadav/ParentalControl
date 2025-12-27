@@ -7,8 +7,10 @@ import keyboard
 import numpy as np
 import cv2
 import struct
+import io
 
 from pynput import mouse
+from PIL import Image
 
 import prot
 
@@ -118,42 +120,54 @@ def mouse_actions():
 # -----------------------------
 # screen section
 # -----------------------------
-def recieve_screenshot():
+def receive_screenshot():
     try:
         screen_socket=create_socket(screen_port,sock_type=socket.SOCK_DGRAM)
-        chunks = {}
-        total_chunks = None
+        
         while True:
-            data, addr = screen_socket.recv(2048)
-            index, total = struct.unpack("!HH", data[:4])
-            chunk_data = data[4:]
+            chunks = {}
+            total_chunks = None
+            while True:
+                data = screen_socket.recv(2048)
+                index, total = struct.unpack("!HH", data[:4])
+                chunk_data = data[4:]
 
-            chunks[index] = chunk_data
-            total_chunks = total
+                chunks[index] = chunk_data
+                total_chunks = total
 
-            if len(chunks) == total_chunks:
-                break
+                if len(chunks) == total_chunks:
+                    break
 
-        img_bytes = b''.join(chunks[i] for i in range(total_chunks))
-        display_image(img_bytes)
+            img_bytes = b''.join(chunks[i] for i in range(total_chunks))
+            print ("received..")
+            display_image(img_bytes)
     except Exception as error:
         print (str(error))
 
 def display_image(img_bytes):
     try:
+        # Convert bytes to numpy array
         nparr = np.frombuffer(img_bytes, np.uint8)
-        image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        cv2.imshow("Received Screenshot", image)
-        cv2.waitKey(100)
-        cv2.destroyAllWindows()
+        # Decode image
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        # Display
+        cv2.imshow('Screenshot Stream', img)
+        cv2.waitKey(1)  # 1ms delay, allows window to update
+
+        # nparr = np.frombuffer(img_bytes, np.uint8)
+        # image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        # cv2.imshow("Received Screenshot", image)
+        # cv2.waitKey(100)
+        # cv2.destroyAllWindows()
     except Exception as error:
         print (str(error))
 
-# keyboard_thread=threading.Thread(target=keyboard_actions)
-# mouse_thread=threading.Thread(target=mouse_actions)
-# mouse_thread.start()
-# keyboard_thread.start()
+keyboard_thread=threading.Thread(target=keyboard_actions)
+mouse_thread=threading.Thread(target=mouse_actions)
+mouse_thread.start()
+keyboard_thread.start()
 
-screen_thread=threading.Thread(target=recieve_screenshot)
+screen_thread=threading.Thread(target=receive_screenshot)
 screen_thread.start()
 screen_thread.join()
