@@ -121,16 +121,24 @@ def image_stream(end_connection):
         screen_socket.close()
         print("screen closed...")
 
+def recive_action():
+    #one thread!!!!
+    socket = create_socket(server_ip,60123)
+    
+    while not end_connection.is_set():
+
+
 
 end_connection = threading.Event()
 
 mouse_thread = threading.Thread(target=recieve_mouse, args=(end_connection, ))
 keyboard_thread = threading.Thread(target=recieve_keyboard, args=(end_connection, ))
-screen_thread = threading.Thread(target=image_stream, args=(end_connection, ))
+#screen_thread = threading.Thread(target=image_stream, args=(end_connection, ))
+
 mouse_thread.start()
 keyboard_thread.start()
-screen_thread.start()
+#screen_thread.start()
 
 mouse_thread.join()
 keyboard_thread.join()
-screen_thread.join()
+#screen_thread.join()
