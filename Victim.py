@@ -123,7 +123,7 @@ def recive_action(socket):
     while not end_connection.is_set():
         raw = prot.receive_msg(socket).split("split_action_message")
         action, message =raw.split("split_action_message")
-        actions[action,message]
+        actions[action](message)
 
 
 end_connection = threading.Event()
