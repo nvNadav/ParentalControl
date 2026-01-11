@@ -98,6 +98,8 @@ def take_screenshot():
 
 def send_image(img_bytes,sock):
     try:
+        if end_connection.is_set():
+            return
         CHUNK_SIZE = 1024
         total_chunks = (len(img_bytes) + CHUNK_SIZE - 1) // CHUNK_SIZE
         for i in range(total_chunks):
