@@ -41,7 +41,7 @@ def create_socket(port,*, host='0.0.0.0', family=socket.AF_INET, sock_type=socke
     return serv,cli_sock,cli_addr
 
 def send_message(action,message,socket):
-    socket.send(prot.create_msg_with_header(f"{action} {message}").encode())
+    socket.send(prot.create_msg_with_header(f"{action}split_action_message{message}").encode())
 
 # -----------------------------
 # keyboard section
@@ -58,7 +58,7 @@ def keyboard_actions(socket):
         keyboard.hook(lambda e: new_key(e, socket))
         keyboard.wait('shift+esc')
         stop_all.set()
-        #keyboard_socket.send(prot.create_msg_with_header("EXIT").encode())
+        send_message(Action.keyboard,"EXIT",socket)
     except Exception as error:
         print (str(error))
     finally:
@@ -139,17 +139,13 @@ def mouse_actions(socket):
 # -----------------------------
 # screen section
 # -----------------------------
-def receive_screenshot():
-    try:
-        screen_socket=create_socket(screen_port,sock_type=socket.SOCK_DGRAM)
-        
-        while True:
-            if stop_all.is_set():
-                return
+def receive_screenshot(socket):
+    try:        
+        while not stop_all.is_set():
             chunks = {}
             total_chunks = None
             while True:
-                data = screen_socket.recv(2048)
+                data = socket.recv(2048)
                 index, total = struct.unpack("!HH", data[:4])
                 chunk_data = data[4:]
 
@@ -181,12 +177,9 @@ def display_image(img_bytes):
 
 
 dic={"keyboard":keyboard_actions,"mouse":mouse_actions,"screen":receive_screenshot}
-def start_remote_controll():
-    serv,socket,cli_addr=create_socket(60123)
+def start_remote_controll(serv,socket,cli_addr):
     dic[threading.current_thread().name](socket)
 
-
-    socket.send(prot.create_msg_with_header("EXIT").encode())
     serv.close()
     socket.close()
 
@@ -194,17 +187,20 @@ def start_remote_controll():
 
 
 stop_all = threading.Event()
+serv,socket,cli_addr=create_socket(60123)
 
-keyboard_thread=threading.Thread(target=start_remote_controll,name="keyboard")
+
+
+keyboard_thread=threading.Thread(target=start_remote_controll,args=(serv,socket,cli_addr),name="keyboard")
 keyboard_thread.start()
 
-mouse_thread=threading.Thread(target=start_remote_controll,name="mouse")
+mouse_thread=threading.Thread(target=start_remote_controll,name="mouse",args=(serv,socket,cli_addr))
 mouse_thread.start()
 
 
-# screen_thread=threading.Thread(target=start_remote_controll,name="screen")
-# screen_thread.start()
+screen_thread=threading.Thread(target=start_remote_controll,name="screen",args=(serv,socket,cli_addr))
+screen_thread.start()
 
-# screen_thread.join()
+screen_thread.join()
 mouse_thread.join()
 keyboard_thread.join()

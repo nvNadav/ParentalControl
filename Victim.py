@@ -40,44 +40,44 @@ def scroll(list, mouse):
     #list[2] = dy value
     mouse.scroll(int(list[1]),int(list[2]))
 
-def recieve_mouse(end_connection):
+def recieve_mouse(end_connection,list):
     try:
-        mouse_socket = create_socket(server_ip,60124)
-        print("Mouse is connected...")
+        # mouse_socket = create_socket(server_ip,60124)
+        # print("Mouse is connected...")
         mouse = Controller()
         functions ={"MOVE":move,"PRESS":press,"RELEASE":release,"SCROLL":scroll}
         
-        while not end_connection.is_set():
-            list=prot.receive_msg(mouse_socket).split()
-            if list[0]=="EXIT":
-                end_connection.set()
-                break
-            functions[list[0]](list,mouse)
+        # while not end_connection.is_set():
+            # list=prot.receive_msg(mouse_socket).split()
+        # if list[0]=="EXIT":
+        #     end_connection.set()
+        #     break
+        functions[list[0]](list,mouse)
     except Exception as error:
         print(str(error))
-    finally:
-        mouse_socket.close()
-        print("Mouse closed...")
+    # finally:
+    #     mouse_socket.close()
+    #     print("Mouse closed...")
 
 # --------------------
 # Keyboard section
 # --------------------
 
-def recieve_keyboard(end_connection):
+def recieve_keyboard(end_connection,key):
     try:
-        keyboard_socket = create_socket(server_ip,60123)
-        print("Keyboard is connected...")
-        while not end_connection.is_set():
-            key = prot.receive_msg(keyboard_socket)
-            if key =="EXIT":
-                end_connection.set()
-                break
-            keyboard.press_and_release(key)
+        # keyboard_socket = create_socket(server_ip,60123)
+        # print("Keyboard is connected...")
+        # while not end_connection.is_set():
+            # key = prot.receive_msg(keyboard_socket)
+        if key =="EXIT":
+            end_connection.set()
+            # break
+        keyboard.press_and_release(key)
     except Exception as error:
         print(str(error))
-    finally:
-        keyboard_socket.close()
-        print("Keyboard closed...")
+    # finally:
+    #     keyboard_socket.close()
+    #     print("Keyboard closed...")
 
 # --------------------
 # screen section
@@ -109,36 +109,30 @@ def send_image(img_bytes,sock):
     except Exception as error:
         print(str(error))
 
-def image_stream(end_connection):
+def image_stream(end_connection,socket):
     try:
-        screen_socket = create_socket(server_ip,60125,sock_type=socket.SOCK_DGRAM)
         while not end_connection.is_set():
-            sceenshot_bytes = take_screenshot()
-            send_image(sceenshot_bytes,screen_socket)
+            screenshot_bytes = take_screenshot()
+            send_image(screenshot_bytes,socket)
     except Exception as error:
         print(str(error))
-    finally:
-        screen_socket.close()
-        print("screen closed...")
 
-def recive_action():
+def recive_action(socket):
     #one thread!!!!
-    socket = create_socket(server_ip,60123)
-    
+    actions = {"keyboard":recieve_keyboard,"mouse":recieve_mouse}
     while not end_connection.is_set():
-
+        raw = prot.receive_msg(socket).split("split_action_message")
+        action, message =raw.split("split_action_message")
+        actions[action,message]
 
 
 end_connection = threading.Event()
 
-mouse_thread = threading.Thread(target=recieve_mouse, args=(end_connection, ))
-keyboard_thread = threading.Thread(target=recieve_keyboard, args=(end_connection, ))
-#screen_thread = threading.Thread(target=image_stream, args=(end_connection, ))
+socket = create_socket(server_ip,60123)
 
-mouse_thread.start()
-keyboard_thread.start()
-#screen_thread.start()
 
-mouse_thread.join()
-keyboard_thread.join()
-#screen_thread.join()
+recieve_socket = threading.Thread(target=recive_action, args=(socket,))
+recieve_socket.start()
+
+screen_thread = threading.Thread(target=image_stream, args=(end_connection,socket ))
+screen_thread.start()
