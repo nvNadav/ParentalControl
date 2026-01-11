@@ -52,7 +52,9 @@ def recieve_mouse(end_connection,list):
         # if list[0]=="EXIT":
         #     end_connection.set()
         #     break
+        list = list.split()
         functions[list[0]](list,mouse)
+
     except Exception as error:
         print(str(error))
     # finally:
@@ -96,6 +98,8 @@ def take_screenshot():
 
 def send_image(img_bytes,sock):
     try:
+        if end_connection.is_set():
+            return
         CHUNK_SIZE = 1024
         total_chunks = (len(img_bytes) + CHUNK_SIZE - 1) // CHUNK_SIZE
         for i in range(total_chunks):
@@ -121,9 +125,9 @@ def recive_action(socket):
     #one thread!!!!
     actions = {"keyboard":recieve_keyboard,"mouse":recieve_mouse}
     while not end_connection.is_set():
-        raw = prot.receive_msg(socket).split("split_action_message")
-        action, message =raw.split("split_action_message")
-        actions[action](message)
+        raw = prot.receive_msg(socket)
+        action, message = raw.split("split_action_message")
+        actions[action](end_connection,message)
 
 
 end_connection = threading.Event()
