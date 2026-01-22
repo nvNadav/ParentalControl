@@ -32,6 +32,14 @@ class GUI:
         self.signup_confirm = None
         self.signup_window = None
 
+
+        def on_closing():
+            if messagebox.askyesno("Exit", "Are you sure you want to close this window?"):
+                self.root.destroy() 
+        
+        self.root.protocol("WM_DELETE_WINDOW", on_closing)
+
+
     def open_signup_window(self):
         self.signup_window = tk.Toplevel(self.root)
         self.signup_window.title("Create Account")
@@ -84,8 +92,8 @@ class GUI:
         if not self.db.check_user(username,password):
             messagebox.showerror("Login Error", "Incorrect username or password!")
         else:
-            self.root.destroy()
-            mainWindow.mainWindow()
+            self.root.withdraw()  
+            mainWindow.mainWindow(self.root)
 
 if __name__=="__main__":
     gui=GUI()
