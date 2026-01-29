@@ -1,7 +1,7 @@
 import tkinter as tk
 import threading
 import socket
-
+import prot
 port = 60123
 
 
@@ -11,19 +11,37 @@ class mainWindow:
         self.window = tk.Toplevel(root)
         self.window.title("Main Menu")
         self.window.geometry("400x300")
+        self.window.configure(bg="#2b2b2b")
+
+        tk.Label(
+            self.window,
+            text="Remote Control",
+            font=("Segoe UI", 18, "bold"),
+            fg="white",
+            bg="#2b2b2b"
+        ).pack(pady=20)
 
         tk.Button(
             self.window,
             text="Wait for connection",
-            width=20,
+            width=22,
+            height=2,
+            bg="#4CAF50",
+            fg="white",
+            font=("Segoe UI", 11),
             command=self.wait_for_connection
-        ).pack(pady=20)
+        ).pack(pady=10)
 
         tk.Button(
             self.window,
             text="Exit",
+            width=22,
+            height=2,
+            bg="#f44336",
+            fg="white",
+            font=("Segoe UI", 11),
             command=self.close
-        ).pack(pady=20)
+        ).pack(pady=10)
 
         self.wait_window = None
         self.server_socket = None
@@ -33,21 +51,25 @@ class mainWindow:
     # Wait for client
     # ------------------------
     def wait_for_connection(self):
-        # Open waiting window
         self.wait_window = tk.Toplevel(self.window)
-        self.wait_window.title("Waiting")
+        self.wait_window.title("Waiting for Client")
         self.wait_window.geometry("300x150")
+        self.wait_window.configure(bg="#1e1e1e")
         self.wait_window.transient(self.window)
         self.wait_window.grab_set()
 
         tk.Label(
             self.wait_window,
             text="Waiting for client to connect...",
-            font=("Arial", 12)
-        ).pack(pady=30)
+            font=("Segoe UI", 11),
+            fg="white",
+            bg="#1e1e1e"
+        ).pack(expand=True)
 
-        # Start thread for blocking accept()
-        threading.Thread(target=self._accept_client_thread, daemon=True).start()
+        threading.Thread(
+            target=self._accept_client_thread,
+            daemon=True
+        ).start()
 
     def _accept_client_thread(self):
         try:
@@ -58,21 +80,24 @@ class mainWindow:
             client_socket, addr = self.server_socket.accept()
             self.client_socket = client_socket
 
-            # GUI update on main thread
-            self.window.after(0, lambda: self.on_client_connected(addr))
+            # 🔹 receive client name
+            client_name = prot.receive_msg(client_socket)
+
+            self.window.after(
+                0,
+                lambda: self.on_client_connected(addr, client_name)
+            )
 
         except Exception as e:
             self.window.after(0, lambda: self.show_error(str(e)))
 
-    def on_client_connected(self, addr):
+    def on_client_connected(self, addr, client_name):
         if self.wait_window:
             self.wait_window.destroy()
 
-        tk.Label(self.window, text=f"Connected: {addr[0]}:{addr[1]}").pack(pady=10)
-        print(f"Client connected from {addr}")
+        print(f"Client connected from {addr}, name={client_name}")
 
-        # Open your abilities window
-        self.open_abilities_window()
+        self.open_abilities_window(client_name)
 
     def show_error(self, msg):
         if self.wait_window:
@@ -80,30 +105,59 @@ class mainWindow:
         print("Error:", msg)
 
     # ------------------------
-    # Abilities window (buttons)
+    # Abilities window
     # ------------------------
-    def open_abilities_window(self):
+    def open_abilities_window(self, client_name):
         abilities_win = tk.Toplevel(self.window)
-        abilities_win.title("Abilities")
-        abilities_win.geometry("400x300")
+        abilities_win.title(client_name)
+        abilities_win.geometry("450x350")
+        abilities_win.configure(bg="#252526")
 
-        # Example buttons
-        tk.Button(abilities_win, text="Ability 1", command=lambda: self.use_ability(1)).pack(pady=10)
-        tk.Button(abilities_win, text="Ability 2", command=lambda: self.use_ability(2)).pack(pady=10)
-        tk.Button(abilities_win, text="Exit", command=abilities_win.destroy).pack(pady=20)
+        header = tk.Label(
+            abilities_win,
+            text=f"Connected to {client_name}",
+            font=("Segoe UI", 16, "bold"),
+            fg="white",
+            bg="#252526"
+        )
+        header.pack(pady=15)
+
+        button_frame = tk.Frame(abilities_win, bg="#252526")
+        button_frame.pack(expand=True)
+
+        for i in range(1, 5):
+            tk.Button(
+                button_frame,
+                text=f"Button {i}",
+                width=20,
+                height=2,
+                bg="#007ACC",
+                fg="white",
+                font=("Segoe UI", 11),
+                command=lambda n=i: self.use_ability(n)
+            ).pack(pady=6)
+
+        tk.Button(
+            abilities_win,
+            text="Disconnect",
+            bg="#f44336",
+            fg="white",
+            font=("Segoe UI", 11),
+            width=20,
+            command=abilities_win.destroy
+        ).pack(pady=15)
 
     def use_ability(self, n):
         print(f"Using ability {n}")
-        # Here you can send a message to the client using self.client_socket
         if self.client_socket:
-            self.client_socket.send(f"Ability {n} activated".encode())
+            self.client_socket.send(f"ABILITY {n}".encode())
 
     # ------------------------
     # Exit
     # ------------------------
     def close(self):
         self.window.destroy()
-        self.root.deiconify()  # show login again
+        self.root.deiconify()
         if self.client_socket:
             self.client_socket.close()
         if self.server_socket:
