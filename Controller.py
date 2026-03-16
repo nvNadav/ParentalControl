@@ -27,12 +27,12 @@ class Action(str, Enum):
 def create_socket(port,*, host='0.0.0.0', family=socket.AF_INET, sock_type=socket.SOCK_STREAM):
     serv = socket.socket(family,sock_type)
     serv.bind((host, port))
-    # if sock_type==socket.SOCK_DGRAM:
-    #     print(f"Server is waiting for connection in port {port}")
-    #     data, cli_addr = serv.recvfrom(1024)
-    #     serv.connect(cli_addr)
-    #     print(f"Server is connected with {cli_addr}")
-    #     return serv
+    if sock_type==socket.SOCK_DGRAM:
+        print(f"Server is waiting for connection in port {port}")
+        data, cli_addr = serv.recvfrom(1024)
+        serv.connect(cli_addr)
+        print(f"Server is connected with {cli_addr}")
+        return serv
     
     serv.listen(1)
     print(f"Server is waiting for connection in port {port}")
@@ -187,18 +187,20 @@ def start_remote_controll(serv,socket,cli_addr):
 
 
 stop_all = threading.Event()
-serv,socket,cli_addr=create_socket(60123)
+tcp_serv,tcp_socket,tcp_cli_addr=create_socket(60123)
 
 
-
-keyboard_thread=threading.Thread(target=start_remote_controll,args=(serv,socket,cli_addr),name="keyboard")
+#TCP socket
+keyboard_thread=threading.Thread(target=start_remote_controll,args=(tcp_serv,tcp_socket,tcp_cli_addr),name="keyboard")
 keyboard_thread.start()
 
-mouse_thread=threading.Thread(target=start_remote_controll,name="mouse",args=(serv,socket,cli_addr))
+mouse_thread=threading.Thread(target=start_remote_controll,name="mouse",args=(tcp_serv,tcp_socket,tcp_cli_addr))
 mouse_thread.start()
 
+#UDP socket
 
-screen_thread=threading.Thread(target=start_remote_controll,name="screen",args=(serv,socket,cli_addr))
+udp_socket=create_socket(60123,sock_type=socket.SOCK_DGRAM)
+screen_thread=threading.Thread(target=start_remote_controll,name="screen",args=(udp_serv,udp_socket,udp_cli_addr))
 screen_thread.start()
 
 screen_thread.join()

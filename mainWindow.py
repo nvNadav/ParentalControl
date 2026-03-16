@@ -125,17 +125,16 @@ class mainWindow:
         button_frame = tk.Frame(abilities_win, bg="#252526")
         button_frame.pack(expand=True)
 
-        for i in range(1, 5):
-            tk.Button(
-                button_frame,
-                text=f"Button {i}",
-                width=20,
-                height=2,
-                bg="#007ACC",
-                fg="white",
-                font=("Segoe UI", 11),
-                command=lambda n=i: self.use_ability(n)
-            ).pack(pady=6)
+        tk.Button(
+            button_frame,
+            text="Block Sites",
+            width=20,
+            height=2,
+            bg="#007ACC",
+            fg="white",
+            font=("Segoe UI", 11),
+            command=self.open_block_sites_window
+        ).pack(pady=6)
 
         tk.Button(
             abilities_win,
@@ -147,10 +146,40 @@ class mainWindow:
             command=abilities_win.destroy
         ).pack(pady=15)
 
-    def use_ability(self, n):
-        print(f"Using ability {n}")
-        if self.client_socket:
-            self.client_socket.send(f"ABILITY {n}".encode())
+    def open_block_sites_window(self):
+        block_win = tk.Toplevel(self.window)
+        block_win.title("Block Sites")
+        block_win.geometry("350x200")
+        block_win.configure(bg="#1e1e1e")
+
+        tk.Label(
+            block_win,
+            text="Enter URL to block:",
+            font=("Segoe UI", 11),
+            fg="white",
+            bg="#1e1e1e"
+        ).pack(pady=10)
+
+        url_entry = tk.Entry(block_win, width=40)
+        url_entry.pack(pady=5)
+
+        tk.Button(
+            block_win,
+            text="Send",
+            bg="#4CAF50",
+            fg="white",
+            width=15,
+            command=lambda: self.send_message("BLOCK " + url_entry.get())
+        ).pack(pady=15)
+
+    def send_message(self, msg):
+        if not self.client_socket:
+            print("No client connected.")
+            return
+        try:
+            self.client_socket.send(prot.create_msg_with_header(msg).encode())
+        except Exception as e:
+            print("Send failed:", e)
 
     # ------------------------
     # Exit
