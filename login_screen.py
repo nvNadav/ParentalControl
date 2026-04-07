@@ -2,7 +2,7 @@ import tkinter as tk
 import UserDatabase
 from tkinter import messagebox
 import mainWindow
-
+import connection_window
  
 class GUI:
     def __init__(self):
@@ -93,7 +93,8 @@ class GUI:
             messagebox.showerror("Login Error", "Incorrect username or password!")
         else:
             self.root.withdraw()  
-            mainWindow.mainWindow(self.root)
+            #mainWindow.mainWindow(self.root)
+            connection_window.ConnectionWindow(self.root)
 
 if __name__=="__main__":
     gui=GUI()
