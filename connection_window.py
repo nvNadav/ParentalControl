@@ -2,7 +2,7 @@ import tkinter as tk
 import threading
 import socket
 import prot
-import ability_window
+import gemini_question_window
 
 PORT = 60123
 
@@ -65,8 +65,10 @@ class ConnectionWindow:
         if self.wait_window:
             self.wait_window.destroy()
         
-        # Instantiate the next class and pass the socket!
-        ability_window.AbilitiesWindow(self.window, client_socket, client_name)
+        # Instantiate the gemini_question class, pass the socket
+        gemini_question_window.GQWindow(self.root,client_socket,client_name)
+
+        #ability_window.AbilitiesWindow(self.window, client_socket, client_name)
 
     def close_app(self):
         if self.server_socket:

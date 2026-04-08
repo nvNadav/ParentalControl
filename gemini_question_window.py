@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
+import ability_window
 
 # cli = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # cli.connect(('127.0.0.1', 60123))
@@ -14,12 +15,17 @@ FRAME_BG = "#383838"      # Slightly lighter gray for the box
 
 class GQWindow:
 
-    def __init__(self):
-        # Root config
-        self.root=tk.Tk()
-        self.root.title("Option Collector Pro")
-        self.root.geometry("400x450")
-        self.root.configure(bg=BG_COLOR)
+    def __init__(self,root,client_socket,client_name):
+        #save them to pass onto the next window
+        self.client_socket=client_socket
+        self.client_name=client_name
+        self.root=root
+
+        # gemini_window config
+        self.gemini_window=tk.Toplevel(root)
+        self.gemini_window.title("Option Collector Pro")
+        self.gemini_window.geometry("400x450")
+        self.gemini_window.configure(bg=BG_COLOR)
 
         # Style config
         self.style = ttk.Style()
@@ -29,7 +35,7 @@ class GQWindow:
                     font=("Segoe UI", 10))
 
         # Header Section
-        self.header_frame = tk.Frame(self.root, bg=BG_COLOR)
+        self.header_frame = tk.Frame(self.gemini_window, bg=BG_COLOR)
         self.header_frame.pack(fill="x", pady=(30, 10))
 
         tk.Label(self.header_frame, 
@@ -45,7 +51,7 @@ class GQWindow:
                 fg="#AAAAAA").pack()
         
         # Options Container (The "Card")
-        self.container = tk.Frame(self.root, bg=FRAME_BG, bd=1, relief="flat", padx=20, pady=20)
+        self.container = tk.Frame(self.gemini_window, bg=FRAME_BG, bd=1, relief="flat", padx=20, pady=20)
         self.container.pack(pady=10, padx=40, fill="both")
 
         self.options = ["gambling", "sports", "violent", "adult content", "gaming"]
@@ -60,7 +66,7 @@ class GQWindow:
             self.cb.pack(anchor="w", pady=5)
 
         # Button
-        self.save_btn = tk.Button(self.root, 
+        self.save_btn = tk.Button(self.gemini_window, 
                             text="SAVE SELECTIONS", 
                             command=self.save_selections, 
                             bg=ACCENT_COLOR, 
@@ -86,7 +92,7 @@ class GQWindow:
         self.user_choices = []
 
     def start(self):
-        self.root.mainloop()
+        self.gemini_window.mainloop()
 
     def save_selections(self):
         self.user_choices = [option for option, var in self.selections.items() if var.get()]
@@ -101,7 +107,10 @@ class GQWindow:
         is_sure = messagebox.askyesno("Confirm Selections", msg)
         
         if is_sure:
-            self.root.destroy() 
+            # Instantiate the abillity class, pass the socket and the user's choice!
+            ability_window.AbilitiesWindow(self.root,self.user_choices, self.client_socket, self.client_name)
+            self.gemini_window.destroy()
+
 
     # Hover effects for the button
     def on_enter(self, e):
@@ -118,5 +127,7 @@ class GQWindow:
 
 
 if __name__=="__main__":
-    gemini_window=GQWindow()
+    root=tk.Tk()
+    root.withdraw()
+    gemini_window=GQWindow(root)
     gemini_window.start()
