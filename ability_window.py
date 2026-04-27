@@ -26,7 +26,7 @@ class AbilitiesWindow:
         button_frame.pack(expand=True)
 
         tk.Button(
-            button_frame, text="Block Sites", width=20, height=2,
+            button_frame, text="Site actions", width=20, height=2,
             bg="#007ACC", fg="white", font=("Segoe UI", 11),
             command=self.open_block_sites_window
         ).pack(pady=6)
@@ -37,6 +37,8 @@ class AbilitiesWindow:
             command=self.disconnect
         ).pack(pady=15)
 
+        # send the client the user choices
+        self.send_message(f"USER_CHOICES {" ".join(self.user_choices)}")
     
     def open_block_sites_window(self):
         block_win = tk.Toplevel(self.window)
@@ -58,7 +60,7 @@ class AbilitiesWindow:
 
         tk.Button(
             left_frame, text="Block Site", bg="#4CAF50", fg="white", width=15,
-            command=lambda: self.process_action("BLOCK",block_entry,block_win)
+            command=lambda: self.process_block_action("BLOCK",block_entry,block_win)
         ).pack(pady=5)
 
         # --- RIGHT SIDE: UNBLOCK SECTION ---
@@ -71,17 +73,16 @@ class AbilitiesWindow:
 
         tk.Button(
             right_frame, text="Unblock Site", bg="#FF9800", fg="white", width=15,
-            command=lambda: self.process_action("UNBLOCK",unblock_entry,block_win)
+            command=lambda: self.process_block_action("UNBLOCK",unblock_entry,block_win)
         ).pack(pady=5)
 
         # --- BOTTOM: UNBLOCK ALL SECTION ---
-        # This stays in the main window (block_win), naturally sitting below the form_frame
         tk.Button(
             block_win, text="Unblock All", bg="#F44336", fg="white", width=20,
             command=lambda: self.send_message("UNBLOCK_ALL") 
         ).pack(pady=(15, 10))
 
-    def process_action(self,action,entry,block_win):
+    def process_block_action(self,action,entry,block_win):
         url = entry.get().strip()
         if not url:
             # Prevent sending empty messages

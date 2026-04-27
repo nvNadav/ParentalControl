@@ -2,7 +2,9 @@ import tkinter as tk
 import UserDatabase
 from tkinter import messagebox
 import connection_window
- 
+
+
+
 class GUI:
     def __init__(self):
         self.db = UserDatabase.UserDatabase()
@@ -27,7 +29,7 @@ class GUI:
         self.password_entry.pack(pady=5, ipady=3)
         self.add_placeholder(self.password_entry, "Enter your password...", is_password=True)
 
-        # Buttons (Now 3D with relief="raised" and borderwidth=3)
+        # Buttons 
         tk.Button(
             main_frame, text="Login", bg="#4CAF50", fg="white", 
             relief="raised", borderwidth=3, cursor="hand2", font=("Arial", 10, "bold"),

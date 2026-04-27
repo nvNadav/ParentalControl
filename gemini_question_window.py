@@ -54,7 +54,7 @@ class GQWindow:
         self.container = tk.Frame(self.gemini_window, bg=FRAME_BG, bd=1, relief="flat", padx=20, pady=20)
         self.container.pack(pady=10, padx=40, fill="both")
 
-        self.options = ["gambling", "sports", "violent", "adult content", "gaming"]
+        self.options = ["gambling", "sports", "violent", "adult_content", "gaming"]
         self.selections = {}
 
         for item in self.options:
