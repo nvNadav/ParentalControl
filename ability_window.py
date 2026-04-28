@@ -1,6 +1,8 @@
 import tkinter as tk
 import prot
 from tkinter import messagebox
+from tkinter import scrolledtext
+import threading
 
 class AbilitiesWindow:
     """Class to handle the control panel once a client is connected."""
@@ -38,7 +40,10 @@ class AbilitiesWindow:
         ).pack(pady=15)
 
         # send the client the user choices
-        self.send_message(f"USER_CHOICES {" ".join(self.user_choices)}")
+        self.send_message(f"USER_CHOICES {' '.join(self.user_choices)}")
+
+        #start a receiving thread 
+        threading.Thread(target=self.receive_messages, daemon=True).start()
     
     def open_block_sites_window(self):
         block_win = tk.Toplevel(self.window)
@@ -103,6 +108,39 @@ class AbilitiesWindow:
         if self.client_socket:
             self.client_socket.close()
         self.window.destroy()
+
+    # function that receives messages 
+    def receive_messages(self):
+        while True:
+            try:
+                msg = prot.receive_msg(self.client_socket)
+
+                if not msg:
+                    break
+
+                
+                self.window.after(0, self.show_message_window, msg)
+
+            except Exception as e:
+                print("Receive error:", e)
+                break
+    def show_message_window(self, msg):
+        win = tk.Toplevel(self.window)
+        win.title("Message")
+        win.geometry("400x250")
+
+        text_box = scrolledtext.ScrolledText(
+            win,
+            wrap=tk.WORD,
+            width=50,
+            height=10,
+            font=("Segoe UI", 10)
+        )
+
+        text_box.pack(padx=10, pady=10, fill="both", expand=True)
+
+        text_box.insert(tk.END, msg)
+        text_box.configure(state="disabled")  # read-only
 
 if __name__=="__main__":
     root=tk.Tk()
