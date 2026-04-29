@@ -3,6 +3,8 @@ import prot
 from tkinter import messagebox
 from tkinter import scrolledtext
 import threading
+import json
+import pandas as pd
 
 class AbilitiesWindow:
     """Class to handle the control panel once a client is connected."""
@@ -52,6 +54,8 @@ class AbilitiesWindow:
 
         #start a receiving thread 
         threading.Thread(target=self.receive_messages, daemon=True).start()
+
+        self.send_message("ATTRIBUTES")
     
     def open_gemini_suggestion_window(self):
         gemini_win = tk.Toplevel(self.window)
@@ -194,7 +198,14 @@ class AbilitiesWindow:
 
                 if not msg:
                     break
-
+                #check if its the attribute message
+                if msg.split()[0]=="ATTRIBUTES":
+                    msg=" ".join(msg.split()[1:])
+                    print ("msg: "+msg)
+                    attribute=json.loads(msg)
+                    print("\nattribute: ",attribute)
+                    self.create_data_frame(attribute)
+                    continue
                 
                 self.window.after(0, self.show_message_window, msg)
 
@@ -218,6 +229,12 @@ class AbilitiesWindow:
 
         text_box.insert(tk.END, msg)
         text_box.configure(state="disabled")  # read-only
+
+    def create_data_frame(self,attributes):
+        df = pd.DataFrame(attributes)
+        print ("\ndf: ",df)
+
+
 
 if __name__=="__main__":
     root=tk.Tk()

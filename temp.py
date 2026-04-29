@@ -39,5 +39,5 @@
 # #     print(item["title"], item["last_visit_time"])
 import json
 lst= [ {"hello":1,"bye":1},{"why":2,"cause":2}]
-x="together "+ json.dumps(lst)
-print (type(x))
+x="together "+ json.dumps("error")
+print (x)

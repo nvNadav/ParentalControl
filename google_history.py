@@ -2,6 +2,7 @@ import sqlite3
 import shutil
 from datetime import datetime, timedelta
 import os
+from urllib.parse import urlparse
 
 class GoogleHistory():
     def __init__(self):
@@ -33,7 +34,7 @@ class GoogleHistory():
             for url, title, last_visit_time in cursor.fetchall():
                 readable_time = self.chrome_time_to_datetime(last_visit_time)
                 results.append({
-                    "url": url,
+                    "url": self.get_domain(url),
                     "title": title,
                     "last_visit_time": readable_time
                 })
@@ -62,12 +63,44 @@ class GoogleHistory():
 
             for url, title, visit_count in cursor.fetchall():
                 results.append({
-                    "url": url,
+                    "url": self.get_domain(url),
                     "title": title,
                     "visit_count": visit_count
                 })
         self.most_visited_sites=results
         return results
     
+    def get_attributes(self, limit=50):
+
+        if os.path.exists(self.history_path_copy):
+            os.remove(self.history_path_copy)
+        
+        shutil.copy2(self.history_path,self.history_path_copy)
+
+        with sqlite3.connect(self.history_path_copy) as conn:
+            cursor = conn.cursor()
+
+            cursor.execute("""
+            SELECT url, title, visit_count,last_visit_time
+            FROM urls
+            LIMIT ?
+            """, (limit,))
+
+            results = []
+
+            for url, title, visit_count, last_visit_time in cursor.fetchall():
+                readable_time = self.chrome_time_to_datetime(last_visit_time)
+                results.append({
+                    "url": self.get_domain(url),
+                    "title": title,
+                    "visit_count": visit_count,
+                    "last_visit_time": readable_time.strftime("%Y-%m-%d %H:%M:%S")
+
+                })
+        return results
+    
     def chrome_time_to_datetime(self,chrome_time):
         return datetime(1601, 1, 1) + timedelta(microseconds=chrome_time)
+    
+    def get_domain(self,url):
+        return urlparse(url).netloc

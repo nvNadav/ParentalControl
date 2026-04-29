@@ -32,8 +32,7 @@ class Client:
             # send client name
             self.client_socket.send(prot.create_msg_with_header(self.name).encode())
             
-            threading.Thread(target=self.receive_messages, daemon=True).start()
-            
+            self.receive_messages()            
         except Exception as e:
             print("Connection failed:", e)
         
@@ -41,9 +40,10 @@ class Client:
     def receive_messages(self):
         functions = {"BLOCK":self.block_site,"UNBLOCK":self.unblock_site,"UNBLOCK_ALL":self.unblock_all
                     ,"USER_CHOICES":self.save_user_choices,"GEMINI_SUGGEST_HISTORY":self.gemini_suggestion_history
-                    ,"GEMINI_SUGGEST": self.gemini_suggestion}
+                    ,"GEMINI_SUGGEST": self.gemini_suggestion,"ATTRIBUTES":self.send_attributes}
 
         while True:
+
             try:
                 msg = prot.receive_msg(self.client_socket)
 
@@ -51,9 +51,9 @@ class Client:
                     print("Server disconnected")
                     continue
                 
-                print("Message from server:", msg)
+                #print("Message from server:", msg)
                 lst = msg.split()
-                print (lst)
+                #print (lst)
                 functions[lst[0]](lst)
                 
 
@@ -86,7 +86,7 @@ class Client:
 
     def gemini_worker(self,lst):
         last_visited_sites= self.google_history.get_last_visited_sites(0)
-        most_visited_sites= self.google_history.get_most_visited_sites(1)
+        most_visited_sites= self.google_history.get_most_visited_sites(2)
 
         all_sites = last_visited_sites + most_visited_sites
 
@@ -98,7 +98,7 @@ class Client:
         for f in as_completed(futures):
             try:
                 result = f.result()
-                results.append(result)
+                results.append(result+"\n")
             except Exception as e:
                 print("Error:", e)
         # send server the results
@@ -109,22 +109,23 @@ class Client:
             html = requests.get(site["url"], timeout=5).text[:5000]
             answer = gemini_suggestion_api.generate(self.user_choices,site["title"],html)
             if "NO" in answer.upper(): # no means the site IS safe
-                return {"url":site["url"],
-                        "title":site["title"],
-                        "safe":"Yes"}
+                return f"{site['title']} is SAFE"
+                # return {"url":site["url"],
+                #         "title":site["title"],
+                #         "safe":"Yes"}
             elif "YES" in answer.upper(): # yes means the site is NOT safe
-                return {"url":site["url"],
-                        "title":site["title"],
-                        "safe":"No"}
+                return f"{site['title']} is NOT safe"
+                # return {"url":site["url"],
+                #         "title":site["title"],
+                #         "safe":"No"}
             else:
-                return {"url":site["url"],
-                        "title":site["title"],
-                        "safe":"Unclear"}
+                return f"the model was not sure while checking {site['title']}"
+                # return {"url":site["url"],
+                #         "title":site["title"],
+                #         "safe":"Unclear"}
         except Exception as e:
             print("Error:", e)
-            return {"url":site["url"],
-                        "title":site["title"],
-                        "safe":"Unclear"}
+            return f"the model experienced high demend while checking {site['title']}"
 
     def gemini_suggestion(self, lst):
         threading.Thread(target=self.single_site_worker, args=(lst,), daemon=True).start()
@@ -140,6 +141,10 @@ class Client:
         # send result back
         self.send_message("GEMINI_RESULT " + json.dumps(result))
 
+    def send_attributes(self,lst):
+        attributes=self.google_history.get_attributes()
+        msg=json.dumps(attributes)
+        self.send_message("ATTRIBUTES "+msg)
 
 
 
