@@ -27,10 +27,18 @@ class AbilitiesWindow:
         button_frame = tk.Frame(self.window, bg="#252526")
         button_frame.pack(expand=True)
 
+        #site actions button
         tk.Button(
             button_frame, text="Site actions", width=20, height=2,
             bg="#007ACC", fg="white", font=("Segoe UI", 11),
             command=self.open_block_sites_window
+        ).pack(pady=6)
+
+        #gemini button
+        tk.Button(
+            button_frame, text="Gemini site suggestion", width=20, height=2,
+            bg="#007ACC", fg="white", font=("Segoe UI", 11),
+            command=self.open_gemini_suggestion_window
         ).pack(pady=6)
 
         tk.Button(
@@ -45,6 +53,75 @@ class AbilitiesWindow:
         #start a receiving thread 
         threading.Thread(target=self.receive_messages, daemon=True).start()
     
+    def open_gemini_suggestion_window(self):
+        gemini_win = tk.Toplevel(self.window)
+        gemini_win.title("Gemini Suggestions")
+        gemini_win.geometry("400x250")
+        gemini_win.configure(bg="#1e1e1e")
+
+        tk.Label(
+            gemini_win,
+            text="Gemini Site Suggestions",
+            fg="white",
+            bg="#1e1e1e",
+            font=("Segoe UI", 12, "bold")
+        ).pack(pady=15)
+
+        # Button: suggest based on history 
+        tk.Button(
+            gemini_win,
+            text="Suggest from browsing history",
+            width=25,
+            height=2,
+            bg="#4CAF50",
+            fg="white",
+            command=lambda: self.send_message("GEMINI_SUGGEST_HISTORY")
+        ).pack(pady=10)
+
+        # --- Single site suggestion ---
+        tk.Label(
+            gemini_win,
+            text="Enter a site:",
+            fg="white",
+            bg="#1e1e1e"
+        ).pack(pady=(10, 3))
+
+        url_entry = tk.Entry(gemini_win, width=30)
+        url_entry.pack(pady=5)
+
+        title_entry = tk.Entry(gemini_win, width=30)
+        title_entry.pack(pady=5)
+
+        tk.Button(
+            gemini_win,
+            text="Suggest for this site",
+            width=25,
+            height=2,
+            bg="#007ACC",
+            fg="white",
+            command=lambda: self.single_site_helper(url_entry,title_entry,gemini_win)  
+        ).pack(pady=10)
+
+    def single_site_helper(self,url_entry,title_entry,parent_win):
+        url=url_entry.get().strip()
+        title=title_entry.get().strip()
+        
+        if not url:
+            messagebox.showwarning("Input Error", "Please enter a url.", parent=parent_win)
+            return
+        elif not title:
+            messagebox.showwarning("Input Error", "Please enter a title.", parent=parent_win)
+            return
+        self.send_message(f"GEMINI_SUGGEST {url} {title}")
+        url_entry.delete(0, tk.END)
+        title_entry.delete(0, tk.END)
+
+        messagebox.showinfo(
+            "Request Sent",
+            f"Suggestion requested for:\n{title} , {url}",
+            parent=parent_win
+        )
+
     def open_block_sites_window(self):
         block_win = tk.Toplevel(self.window)
         block_win.title("Manage Blocked Sites")

@@ -68,8 +68,6 @@ class ConnectionWindow:
         # Instantiate the gemini_question class, pass the socket
         gemini_question_window.GQWindow(self.root,client_socket,client_name)
 
-        #ability_window.AbilitiesWindow(self.window, client_socket, client_name)
-
     def close_app(self):
         if self.server_socket:
             self.server_socket.close()

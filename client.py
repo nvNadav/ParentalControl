@@ -31,15 +31,17 @@ class Client:
 
             # send client name
             self.client_socket.send(prot.create_msg_with_header(self.name).encode())
-
+            
+            threading.Thread(target=self.receive_messages, daemon=True).start()
             
         except Exception as e:
             print("Connection failed:", e)
-        threading.Thread(target=self.receive_messages, daemon=True).start()
+        
 
     def receive_messages(self):
         functions = {"BLOCK":self.block_site,"UNBLOCK":self.unblock_site,"UNBLOCK_ALL":self.unblock_all
-                    ,"USER_CHOICES":self.save_user_choices,"GEMINI":self.gemini_suggestion}
+                    ,"USER_CHOICES":self.save_user_choices,"GEMINI_SUGGEST_HISTORY":self.gemini_suggestion_history
+                    ,"GEMINI_SUGGEST": self.gemini_suggestion}
 
         while True:
             try:
@@ -47,7 +49,7 @@ class Client:
 
                 if not msg:
                     print("Server disconnected")
-                    break
+                    continue
                 
                 print("Message from server:", msg)
                 lst = msg.split()
@@ -79,9 +81,28 @@ class Client:
     def save_user_choices(self,lst):
         self.user_choices=lst[1:]
                
-    def gemini_suggestion(self,lst):
-        threading.Thread(target=self._gemini_worker,args=(lst,), daemon=True).start()
+    def gemini_suggestion_history(self,lst):
+        threading.Thread(target=self.gemini_worker,args=(lst,), daemon=True).start()
 
+    def gemini_worker(self,lst):
+        last_visited_sites= self.google_history.get_last_visited_sites(0)
+        most_visited_sites= self.google_history.get_most_visited_sites(1)
+
+        all_sites = last_visited_sites + most_visited_sites
+
+        futures = [
+            self.executor.submit(self.check_site_with_gemini, site)
+            for site in all_sites
+        ]
+        results = []
+        for f in as_completed(futures):
+            try:
+                result = f.result()
+                results.append(result)
+            except Exception as e:
+                print("Error:", e)
+        # send server the results
+        self.send_message("GEMINI_RESULTS " + json.dumps(results))
 
     def check_site_with_gemini(self,site):
         try:
@@ -105,33 +126,19 @@ class Client:
                         "title":site["title"],
                         "safe":"Unclear"}
 
+    def gemini_suggestion(self, lst):
+        threading.Thread(target=self.single_site_worker, args=(lst,), daemon=True).start()
 
+    def single_site_worker(self, lst):
+        site = {
+            "url": lst[1],
+            "title": lst[2]
+        }
 
-    def _gemini_worker(self,lst):
-        last_visited_sites= self.google_history.get_last_visited_sites(0)
-        most_visited_sites= self.google_history.get_most_visited_sites(1)
+        result = self.check_site_with_gemini(site)
 
-        all_sites = last_visited_sites + most_visited_sites
-
-        futures = [
-            self.executor.submit(self.check_site_with_gemini, site)
-            for site in all_sites
-        ]
-        results = []
-        for f in as_completed(futures):
-            try:
-                result = f.result()
-                results.append(result)
-            except Exception as e:
-                print("Error:", e)
-        # send server the results
-        self.send_message("GEMINI_RESULTS " + json.dumps(results))
-
-
-
-
-
-
+        # send result back
+        self.send_message("GEMINI_RESULT " + json.dumps(result))
 
 
 
