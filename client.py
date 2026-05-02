@@ -49,7 +49,7 @@ class Client:
 
                 if not msg:
                     print("Server disconnected")
-                    continue
+                    break
                 
                 #print("Message from server:", msg)
                 lst = msg.split()
@@ -85,8 +85,8 @@ class Client:
         threading.Thread(target=self.gemini_worker,args=(lst,), daemon=True).start()
 
     def gemini_worker(self,lst):
-        last_visited_sites= self.google_history.get_last_visited_sites(0)
-        most_visited_sites= self.google_history.get_most_visited_sites(2)
+        last_visited_sites= self.google_history.get_last_visited_sites(5)
+        most_visited_sites= self.google_history.get_most_visited_sites(5)
 
         all_sites = last_visited_sites + most_visited_sites
 

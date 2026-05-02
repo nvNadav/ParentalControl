@@ -5,6 +5,9 @@ from tkinter import scrolledtext
 import threading
 import json
 import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from datetime import datetime, timedelta
 
 class AbilitiesWindow:
     """Class to handle the control panel once a client is connected."""
@@ -18,6 +21,7 @@ class AbilitiesWindow:
         self.client_name = client_name
 
         self.user_choices=user_choices
+        self.df=None
 
         tk.Label(
             self.window,
@@ -29,20 +33,29 @@ class AbilitiesWindow:
         button_frame = tk.Frame(self.window, bg="#252526")
         button_frame.pack(expand=True)
 
-        #site actions button
+        # Site actions button
         tk.Button(
             button_frame, text="Site actions", width=20, height=2,
             bg="#007ACC", fg="white", font=("Segoe UI", 11),
             command=self.open_block_sites_window
         ).pack(pady=6)
 
-        #gemini button
+        # Gemini button
         tk.Button(
-            button_frame, text="Gemini site suggestion", width=20, height=2,
+            button_frame, text="Gemini suggestion", width=20, height=2,
             bg="#007ACC", fg="white", font=("Segoe UI", 11),
             command=self.open_gemini_suggestion_window
         ).pack(pady=6)
 
+        # Graphs button
+        tk.Button(
+            button_frame, text="Graphs", width=20, height=2,
+            bg="#007ACC", fg="white", font=("Segoe UI", 11),
+            command=self.open_graphs_window
+        ).pack(pady=6)
+
+
+        # Disconnect button
         tk.Button(
             self.window, text="Disconnect", bg="#f44336", fg="white",
             font=("Segoe UI", 11), width=20,
@@ -56,7 +69,55 @@ class AbilitiesWindow:
         threading.Thread(target=self.receive_messages, daemon=True).start()
 
         self.send_message("ATTRIBUTES")
-    
+
+    def open_graphs_window(self):
+        graph_win = tk.Toplevel(self.window)
+        graph_win.title("Gemini Suggestions")
+        graph_win.geometry("400x250")
+        graph_win.configure(bg="#1e1e1e")
+        
+        tk.Label(
+            graph_win,
+            text="Graphs based on google history",
+            fg="white",
+            bg="#1e1e1e",
+            font=("Segoe UI", 12, "bold")
+        ).pack(pady=15)
+
+        button_frame = tk.Frame(graph_win, bg="#1e1e1e")
+        button_frame.pack(expand=True)
+
+        tk.Button(
+            button_frame, text="visits per day", width=20, height=2,
+            bg="#007ACC", fg="white", font=("Segoe UI", 11),
+            activebackground="#005A9E", activeforeground="white",
+            command=self.show_visits_per_day
+        ).grid(row=0, column=0, padx=5, pady=5)
+        
+        tk.Button(
+            button_frame, text="visits per hour", width=20, height=2,
+            bg="#007ACC", fg="white", font=("Segoe UI", 11),
+            activebackground="#005A9E", activeforeground="white",
+            command=self.show_visits_per_hour
+        ).grid(row=0, column=1, padx=5, pady=5)
+
+        tk.Button(
+            button_frame, text="Heatmap View", width=20, height=2,
+            bg="#007ACC", fg="white", font=("Segoe UI", 11),
+            activebackground="#005A9E", activeforeground="white",
+            command=self.show_heatmap_hour_vs_day
+        ).grid(row=1, column=0, padx=5, pady=5)
+
+        tk.Button(
+            button_frame, text="Most Visited sites", width=20, height=2,
+            bg="#007ACC", fg="white", font=("Segoe UI", 11),
+            activebackground="#005A9E", activeforeground="white",
+            command=self.show_visit_count_of_url
+        ).grid(row=1, column=1, padx=5, pady=5)
+
+        
+
+
     def open_gemini_suggestion_window(self):
         gemini_win = tk.Toplevel(self.window)
         gemini_win.title("Gemini Suggestions")
@@ -190,7 +251,6 @@ class AbilitiesWindow:
             self.client_socket.close()
         self.window.destroy()
 
-    # function that receives messages 
     def receive_messages(self):
         while True:
             try:
@@ -201,9 +261,7 @@ class AbilitiesWindow:
                 #check if its the attribute message
                 if msg.split()[0]=="ATTRIBUTES":
                     msg=" ".join(msg.split()[1:])
-                    print ("msg: "+msg)
                     attribute=json.loads(msg)
-                    print("\nattribute: ",attribute)
                     self.create_data_frame(attribute)
                     continue
                 
@@ -211,7 +269,6 @@ class AbilitiesWindow:
 
             except Exception as e:
                 print("Receive error:", e)
-                break
     def show_message_window(self, msg):
         win = tk.Toplevel(self.window)
         win.title("Message")
@@ -231,9 +288,74 @@ class AbilitiesWindow:
         text_box.configure(state="disabled")  # read-only
 
     def create_data_frame(self,attributes):
-        df = pd.DataFrame(attributes)
-        print ("\ndf: ",df)
+        try:
+            self.df = pd.DataFrame(attributes)
+            self.df["datetime"] = self.df["last_visit_time"].apply(self.chrome_time_to_datetime)
+            self.df["datetime"] = pd.to_datetime(self.df["datetime"], errors="coerce")
+            self.df["date"] = self.df["datetime"].dt.date
+            self.df["hour"] = self.df["datetime"].dt.hour
+            self.df["day_name"] = self.df["datetime"].dt.day_name()
 
+        except Exception as e:
+            print("Receive error:", e)
+
+    def show_visit_count_of_url(self):
+        df_grouped = self.df.groupby("url")["visit_count"].sum().reset_index()
+        df_grouped = df_grouped[df_grouped["visit_count"] > 5]
+        df_grouped = df_grouped.sort_values(by="visit_count",ascending=False).head(10)
+
+        plt.figure(figsize=(10, 6))
+
+        sns.barplot(data=df_grouped, x="url" , y="visit_count")
+        
+        plt.title("Top 10 Most Visited Websites")
+        plt.ylabel("Visit Count")
+        plt.xlabel("Website")
+        plt.xticks(rotation=45) 
+        plt.tight_layout()
+        plt.show()
+
+    def show_visits_per_day(self):
+        visits_per_day = self.df.groupby("date").size().reset_index(name="visits")
+        plt.figure(figsize=(12, 5))
+
+        sns.lineplot(data=visits_per_day, x="date", y="visits" , marker="o")
+
+        plt.title("Visits Per Day")
+        plt.xlabel("Date")
+        plt.ylabel("Number of Visits")
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        plt.show()
+
+    def show_visits_per_hour(self):
+        visits_per_hour = self.df.groupby("hour").size().reset_index(name="visits")
+        plt.figure(figsize=(10, 5))
+        
+        sns.lineplot(data=visits_per_hour, x="hour", y="visits")
+        
+        plt.title("Most Active Hours of the Day")
+        plt.xlabel("Hour (0–23)")
+        plt.ylabel("Number of Visits")
+        plt.tight_layout()
+        plt.show()
+
+    def show_heatmap_hour_vs_day(self):
+        heatmap_data = self.df.pivot_table(index="day_name", columns="hour", values="visit_count", aggfunc="sum")
+        days_order = ["Sunday","Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+        heatmap_data = heatmap_data.reindex(days_order)
+        plt.figure(figsize=(12, 6))
+
+        sns.heatmap(heatmap_data, cmap="coolwarm", linewidths=0.2, linecolor="black")
+
+        plt.title("Browsing Activity Heatmap")
+        plt.xlabel("Hour")
+        plt.ylabel("Day")
+        plt.tight_layout()
+        plt.show()
+
+    def chrome_time_to_datetime(self,chrome_time):
+        return datetime(1601, 1, 1) + timedelta(microseconds=chrome_time)
 
 
 if __name__=="__main__":

@@ -70,7 +70,7 @@ class GoogleHistory():
         self.most_visited_sites=results
         return results
     
-    def get_attributes(self, limit=50):
+    def get_attributes(self, limit=500):
 
         if os.path.exists(self.history_path_copy):
             os.remove(self.history_path_copy)
@@ -89,12 +89,12 @@ class GoogleHistory():
             results = []
 
             for url, title, visit_count, last_visit_time in cursor.fetchall():
-                readable_time = self.chrome_time_to_datetime(last_visit_time)
+                #readable_time = self.chrome_time_to_datetime(last_visit_time)
                 results.append({
                     "url": self.get_domain(url),
                     "title": title,
                     "visit_count": visit_count,
-                    "last_visit_time": readable_time.strftime("%Y-%m-%d %H:%M:%S")
+                    "last_visit_time": last_visit_time#readable_time.strftime("%Y-%m-%d %H:%M:%S")
 
                 })
         return results
