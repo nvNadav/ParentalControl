@@ -19,7 +19,7 @@ class ConnectionWindow:
         self.wait_window = None
 
         tk.Label(
-            self.window, text="Remote Control", font=("Segoe UI", 18, "bold"),
+            self.window, text="Connect to Client", font=("Segoe UI", 18, "bold"),
             fg="white", bg="#2b2b2b"
         ).pack(pady=20)
 

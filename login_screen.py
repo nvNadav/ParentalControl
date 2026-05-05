@@ -154,7 +154,6 @@ class GUI:
             messagebox.showerror("Login Error", "Incorrect username or password!", parent=self.root)
         else:
             self.root.withdraw()  
-            #mainWindow.mainWindow(self.root)
             connection_window.ConnectionWindow(self.root)
 
 if __name__=="__main__":

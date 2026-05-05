@@ -40,29 +40,29 @@ class Client:
     def receive_messages(self):
         functions = {"BLOCK":self.block_site,"UNBLOCK":self.unblock_site,"UNBLOCK_ALL":self.unblock_all
                     ,"USER_CHOICES":self.save_user_choices,"GEMINI_SUGGEST_HISTORY":self.gemini_suggestion_history
-                    ,"GEMINI_SUGGEST": self.gemini_suggestion,"ATTRIBUTES":self.send_attributes}
+                    ,"GEMINI_SUGGEST": self.gemini_suggestion,"ATTRIBUTES":self.send_attributes,}
 
         while True:
 
             try:
                 msg = prot.receive_msg(self.client_socket)
 
-                if not msg:
+                if msg.split()[0]=="CLOSE":
+                    self.client_socket.close()
+                    print ("connection closed..")
                     print("Server disconnected")
                     break
                 
-                #print("Message from server:", msg)
                 lst = msg.split()
-                #print (lst)
                 functions[lst[0]](lst)
                 
 
             except Exception as e:
                 print("Receive error:", e)
+                self.client_socket.close()
+                print ("connection closed..")
                 break
-
-        self.client_socket.close()
-        print ("connection closed..")
+        
     
     # Abilities
     def send_message(self,msg):
@@ -147,8 +147,6 @@ class Client:
         self.send_message("ATTRIBUTES "+msg)
 
 
-
-
 if __name__ == "__main__":
-    client = Client("Nadav")
+    client = Client(input("Please Enter Name: "))
     client.connect()

@@ -23,7 +23,7 @@ class GQWindow:
 
         # gemini_window config
         self.gemini_window=tk.Toplevel(root)
-        self.gemini_window.title("Option Collector Pro")
+        self.gemini_window.title("Option Collector")
         self.gemini_window.geometry("400x450")
         self.gemini_window.configure(bg=BG_COLOR)
 

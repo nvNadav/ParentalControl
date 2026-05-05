@@ -7,7 +7,6 @@ def create_msg_with_header(simple_msg):
     return f'{len(simple_msg):<{HEADERSIZE}}' + simple_msg
 
 def receive_msg(sock):
-    # First, read exactly the header (10 bytes)
     header = b""
     while len(header) < HEADERSIZE:
         chunk = sock.recv(HEADERSIZE - len(header))

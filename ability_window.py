@@ -13,7 +13,7 @@ class AbilitiesWindow:
     """Class to handle the control panel once a client is connected."""
     def __init__(self, parent,user_choices, client_socket, client_name):
         self.window = tk.Toplevel(parent)
-        self.window.title(f"Control: {client_name}")
+        self.window.title("Abilities Window")
         self.window.geometry("450x350")
         self.window.configure(bg="#252526")
         
@@ -72,7 +72,7 @@ class AbilitiesWindow:
 
     def open_graphs_window(self):
         graph_win = tk.Toplevel(self.window)
-        graph_win.title("Gemini Suggestions")
+        graph_win.title("Graphs")
         graph_win.geometry("400x250")
         graph_win.configure(bg="#1e1e1e")
         
@@ -114,9 +114,6 @@ class AbilitiesWindow:
             activebackground="#005A9E", activeforeground="white",
             command=self.show_visit_count_of_url
         ).grid(row=1, column=1, padx=5, pady=5)
-
-        
-
 
     def open_gemini_suggestion_window(self):
         gemini_win = tk.Toplevel(self.window)
@@ -189,7 +186,7 @@ class AbilitiesWindow:
 
     def open_block_sites_window(self):
         block_win = tk.Toplevel(self.window)
-        block_win.title("Manage Blocked Sites")
+        block_win.title("Site Acctions")
         block_win.geometry("500x250") 
         block_win.configure(bg="#1e1e1e")
 
@@ -248,6 +245,7 @@ class AbilitiesWindow:
 
     def disconnect(self):
         if self.client_socket:
+            self.send_message("CLOSE")
             self.client_socket.close()
         self.window.destroy()
 
